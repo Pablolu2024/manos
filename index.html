@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./camera_utils/camera_utils.js"></script>
+  <script src="./control_utils/control_utils.js"></script>
+  <script src="./drawing_utils/drawing_utils.js"></script>
+  <script src="./hands/hands.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <video class="input_video"></video>
+    <canvas class="output_canvas" width="1280px" height="720px"></canvas>
+  </div>
+
+<script type="module">
+const videoElement = document.getElementsByClassName('input_video')[0];
+const canvasElement = document.getElementsByClassName('output_canvas')[0];
+const canvasCtx = canvasElement.getContext('2d');
+
+function onResults(results) {
+  canvasCtx.save();
+  canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+  canvasCtx.drawImage(
+      results.image, 0, 0, canvasElement.width, canvasElement.height);
+  if (results.multiHandLandmarks) {
+    for (const landmarks of results.multiHandLandmarks) {
+      drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+                     {color: '#0000FF', lineWidth: 5});
+      drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 2});
+    
+
+
+// puntos de referencia de la primera mano detectada
+      const thumbTip = landmarks[4];  // Punta del pulgar
+      const indexTip = landmarks[8];  // Punta del dedo índice
+      const middleTip = landmarks[12]; // Punta del dedo medio
+      const ringTip = landmarks[16];   // Punta del dedo anular
+      const pinkyTip = landmarks[20];  // Punta del dedo meñique
+
+      
+      const comando1 = (indexTip.y > thumbTip.y && 
+                   middleTip.y > thumbTip.y && 
+                   ringTip.y > thumbTip.y && 
+                   pinkyTip.y > thumbTip.y  
+                     );
+
+      if (comando1) {
+        alert('Todo Bien');
+      }
+
+     
+      const comando2 = (thumbTip.y > indexTip.y && 
+                   middleTip.y > indexTip.y && 
+                   ringTip.y > indexTip.y && 
+                   pinkyTip.y > indexTip.y &&
+                   thumbTip.y > middleTip.y &&
+                   thumbTip.y > ringTip.y &&
+                   thumbTip.y > pinkyTip.y
+                      );
+
+      if (comando2) {
+        alert('Perdedor');
+      }
+ 
+   
+
+const comando3 = (thumbTip.y > indexTip.y && 
+                    indexTip.y > middleTip.y && 
+                   ringTip.y > indexTip.y && 
+                   pinkyTip.y > indexTip.y 
+                   
+                      );
+
+      if (comando3) {
+        alert('Paz y amor');
+      }
+
+
+
+}
+  }
+  canvasCtx.restore();
+
+}
+
+const hands = new Hands({locateFile: (file) => {
+  return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+}});
+hands.setOptions({
+  maxNumHands: 2,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
+});
+hands.onResults(onResults);
+const camera = new Camera(videoElement, {
+  onFrame: async () => {
+    await hands.send({image: videoElement});
+  },
+  width: 1280,
+  height: 720
+});
+camera.start();
+</script>
+
+</body>
+</html>
